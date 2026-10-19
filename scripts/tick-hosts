@@ -1,0 +1,92 @@
+#!/bin/bash
+# tick-hosts: add or remove Tick's block of site names in /etc/hosts.
+#
+#   tick-hosts block     point the listed sites at this Mac (they stop loading)
+#   tick-hosts unblock   remove the block again
+#
+# Installed as root-owned by setup-blocker.sh and called by Tick through sudo (see /etc/sudoers.d/tick).
+# The only input is the site list in the user's blocklist.txt, and every line is validated.
+set -euo pipefail
+
+BEGIN="# >>> Tick block >>>"
+END="# <<< Tick block <<<"
+
+HOSTS="/etc/hosts"
+LIST=""
+
+if [ "$(id -u)" -eq 0 ]; then
+  # Running as root (the real case): derive the list location from the invoking user only.
+  USER_NAME="${SUDO_USER:-}"
+  if [ -z "$USER_NAME" ] || [ "$USER_NAME" = "root" ]; then
+    echo "tick-hosts: run through sudo as a normal user" >&2
+    exit 1
+  fi
+  HOME_DIR="$(dscl . -read "/Users/$USER_NAME" NFSHomeDirectory | awk '{print $2}')"
+  LIST="$HOME_DIR/Library/Application Support/Tick/blocklist.txt"
+else
+  # Not root: only for testing against temporary files.
+  HOSTS="${TICK_TEST_HOSTS:?set TICK_TEST_HOSTS to a temporary file}"
+  LIST="${TICK_TEST_LIST:?set TICK_TEST_LIST to a temporary file}"
+fi
+
+strip_block() {
+  # Print the hosts file without Tick's block.
+  awk -v b="$BEGIN" -v e="$END" '
+    $0 == b { skip = 1; next }
+    $0 == e { skip = 0; next }
+    !skip { print }
+  ' "$HOSTS"
+}
+
+write_hosts() {
+  # Replace the contents in place (keeps owner and permissions of /etc/hosts).
+  local tmp
+  tmp="$(mktemp)"
+  cat > "$tmp"
+  cat "$tmp" > "$HOSTS"
+  rm -f "$tmp"
+}
+
+flush_dns() {
+  if [ "$(id -u)" -eq 0 ]; then
+    dscacheutil -flushcache 2>/dev/null || true
+    killall -HUP mDNSResponder 2>/dev/null || true
+  fi
+}
+
+block_lines() {
+  [ -r "$LIST" ] || return 0
+  while IFS= read -r line || [ -n "$line" ]; do
+    line="${line%%#*}"
+    line="$(echo "$line" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+    [ -z "$line" ] && continue
+    # Only plain host names: letters, digits, dots and hyphens.
+    if ! [[ "$line" =~ ^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$ ]]; then
+      continue
+    fi
+    names="$line"
+    case "$line" in www.*) ;; *) names="$line www.$line" ;; esac
+    echo "127.0.0.1 $names"
+    echo "::1 $names"
+  done < "$LIST"
+}
+
+case "${1:-}" in
+  block)
+    {
+      strip_block
+      echo "$BEGIN"
+      block_lines
+      echo "$END"
+    } | write_hosts
+    flush_dns
+    ;;
+  unblock)
+    strip_block | write_hosts
+    flush_dns
+    ;;
+  *)
+    echo "usage: tick-hosts block|unblock" >&2
+    exit 2
+    ;;
+esac

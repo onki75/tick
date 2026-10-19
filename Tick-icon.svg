@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <title>Tick</title>
+  <defs>
+    <!-- Icon plate: near-black with a faint top light -->
+    <linearGradient id="plate" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#171718"/>
+      <stop offset="1" stop-color="#050506"/>
+    </linearGradient>
+    <!-- Black disc with a very slight sheen so the crisp rim reads as an object -->
+    <radialGradient id="disc" cx="512" cy="470" r="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#101011"/>
+      <stop offset="1" stop-color="#000000"/>
+    </radialGradient>
+    <filter id="edge" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="7"/>
+    </filter>
+    <filter id="halo" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="30"/>
+    </filter>
+    <clipPath id="shape">
+      <rect x="100" y="100" width="824" height="824" rx="188" ry="188"/>
+    </clipPath>
+  </defs>
+
+  <!-- macOS icon plate (824 px body on a 1024 canvas) -->
+  <rect x="100" y="100" width="824" height="824" rx="188" ry="188" fill="url(#plate)"/>
+
+  <g clip-path="url(#shape)">
+    <!-- Light spilling out from behind the black disc.
+         Circumference of r=272 is 1709; the bright part covers about 72% of it,
+         starting at the top and running clockwise. -->
+    <g transform="rotate(-90 512 512)">
+      <!-- faint rim light all the way around -->
+      <circle cx="512" cy="512" r="272" fill="none" stroke="#ffffff" stroke-opacity="0.16"
+              stroke-width="60" filter="url(#edge)"/>
+      <!-- wide halo -->
+      <circle cx="512" cy="512" r="276" fill="none" stroke="#ffffff" stroke-opacity="0.75"
+              stroke-width="70" stroke-linecap="round" stroke-dasharray="1230 1709" filter="url(#halo)"/>
+      <!-- bright edge -->
+      <circle cx="512" cy="512" r="280" fill="none" stroke="#ffffff"
+              stroke-width="58" stroke-linecap="round" stroke-dasharray="1230 1709" filter="url(#edge)"/>
+    </g>
+    <!-- Black disc on top: its crisp rim is what the light glows from -->
+    <circle cx="512" cy="512" r="256" fill="url(#disc)"/>
+  </g>
+
+  <!-- Hairline highlight on the plate edge -->
+  <rect x="100.5" y="100.5" width="823" height="823" rx="187.5" ry="187.5" fill="none"
+        stroke="#ffffff" stroke-opacity="0.10"/>
+</svg>
