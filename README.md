@@ -81,3 +81,7 @@ whether Tick may control the browser.
   `TimerModel.swift` the timer state, `TimerFaceView.swift` the ring.
 - `scripts/`: `install.sh`, `setup-blocker.sh`, `tick-hosts`.
 - `Tick-icon.svg`: the icon source.
+
+## License
+
+MIT. See [LICENSE](LICENSE).
