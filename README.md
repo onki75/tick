@@ -1,66 +1,83 @@
-# Circle Timer for macOS
+# Tick
 
-Mac のメニューバーに常駐する、シンプルなストップウォッチと円形タイマーの Xcode プロジェクトです。
+A floating circular timer and stopwatch for macOS. No Dock icon, no menu bar item: a small glowing ring
+sits on top of your windows, you call it up with the keyboard, start it, and it hands focus back.
+While the timer runs it can also keep you off distracting sites.
 
-## 動かし方
+macOS 14 or later.
 
-1. macOS 14 以降の Mac に Xcode をインストールします。
-2. `CircleTimer.xcodeproj` を Xcode で開きます。
-3. 上部の実行先を **My Mac** に設定し、`▶`（または `Command + R`）で実行します。署名エラーが出る場合は Xcode の **Signing & Capabilities** で **Sign to Run Locally** などのローカル実行用署名を選択します。
-4. 画面上部のメニューバーにタイマーアイコンと時間が表示されます。最初の起動時はタイマーを表示します。
-5. **Option を2回**で、別アプリ使用中にもタイマーを表示・非表示にするには、macOS の **システム設定 → プライバシーとセキュリティ → アクセシビリティ** で CircleTimer のアクセスを許可してください。メニューバーの「Option×2 の入力権限を設定…」から開けます。許可後、一度アプリを終了して再起動すると確実です。
+## Install
 
-**注意:** この ZIP はソースコードと Xcode プロジェクトです。コンパイル済み `.app` ではありません。この配布環境は macOS ではないため、Mac での Xcode ビルド／実機動作テストは未実施です。
+```sh
+git clone https://github.com/onki75/tick.git
+cd tick
+./scripts/install.sh
+```
 
-## キーボード操作
+`install.sh` builds Tick with `xcodebuild` (Xcode required), signs it ad hoc, and installs it to
+`/Applications/Tick.app`. Re-running it updates the app.
 
-タイマーが表示されているときの操作です。Option の2連打のみグローバル操作です。
+### Option ×2 needs Accessibility permission
 
-| キー | 操作 |
+Pressing **Option twice** works from any app, which needs macOS **System Settings → Privacy & Security →
+Accessibility** to allow Tick. Because the app is signed ad hoc, macOS treats every reinstall as a new app and
+drops the permission: switch Tick off and on again (or remove and re-add it) in that list, then relaunch Tick.
+Until then you can bring the timer forward by opening Tick from Spotlight or Raycast.
+
+## Using it
+
+Call the timer with **Option ×2**. It takes keyboard focus (the ring gets brighter). Press **Option ×2** again to
+give focus back to the previous app.
+
+| Key | Action |
 | --- | --- |
-| `Option` を素早く2回 | 画面上のタイマーを表示／非表示 |
-| `S` | 数字だけのストップウォッチ |
-| `T` | 円形タイマー |
-| `Space` | 開始・一時停止・再開 |
-| `R` | 停止してリセット |
-| `1`〜`3` | タイマーの停止／一時停止中にプリセット選択 |
-| `Tab` | タイマーの停止／一時停止中に直接入力開始 |
-| `Enter` | 直接入力の確定 |
-| `Delete` | 編集中、最後の1桁を削除 |
-| `Esc` | 編集をキャンセル、通常時はウィンドウを隠す |
+| `Option` ×2 | Focus the timer / hand focus back to the previous app |
+| `Space` | Start or pause. After starting, focus goes back to the previous app |
+| Click | Click once to focus. Click again while focused to start or stop, and hand focus back |
+| `Return` | Switch between timer and stopwatch |
+| `Tab` | Enter a time. Type up to 4 digits (`mm:ss`, max 99:59); `Tab` again starts over; `Return` confirms; `Space` confirms and starts |
+| `1` `2` `3` | Choose a preset while the timer is stopped (default 10 / 30 / 60 minutes) |
+| `R` | Reset |
+| Arrow keys, `h` `j` `k` `l` | Move the window; with `Shift`, snap to the screen edge |
+| `,` `.` | Make the glow cooler (white) / warmer |
+| `?` | Show or hide the key hints |
+| `Esc`, `⌘W` | Hide the timer (a running timer keeps running; Option ×2 brings it back) |
+| `⌘,` | Settings: presets and blocked sites |
+| `⌘Q` | Quit |
 
-### 初期プリセット
+When the timer ends it plays a sound. Focusing the timer or clicking it silences the alarm and resets it.
 
-- `1` = **10分**
-- `2` = **30分**
-- `3` = **60分**
+## Site blocking
 
-メニューバーアイコンをクリック → **プリセット設定…** で変更できます。
+While a timer or stopwatch is running, Tick blocks the sites in its list: YouTube, Instagram, TikTok and X by
+default. Add more in **Settings** (`⌘,`); added sites apply from the next start. To remove one, edit
+`~/Library/Application Support/Tick/blocklist.txt` (one host name per line).
 
-### 手動入力の例
+Blocking works through `/etc/hosts`, so it needs a one-time setup that installs a small root-owned helper and a
+`sudoers` rule allowing only that helper's `block` and `unblock`:
 
-`T → Tab → 1230 → Enter → Space` で12分30秒のタイマーを開始します。
+```sh
+sudo ./scripts/setup-blocker.sh            # install
+sudo ./scripts/setup-blocker.sh uninstall  # remove the helper and the rule
+```
 
-数字は右から「秒2桁・分2桁・時2桁」です。
-- `1500` → 15:00
-- `6000` → 1:00:00
-- `123045` → 12:30:45
+Read `scripts/setup-blocker.sh` and `scripts/tick-hosts` first; they are short. Without this setup Tick still
+works as a timer, it just doesn't block anything.
 
-空欄で Enter を押すと現在の設定を維持します。
+Chrome and Safari keep open connections to a site, so an already open tab would not notice the block. Tick
+therefore replaces such tabs with a plain black page (served from `tick.localhost`), moves the timer to the middle
+of the screen over it, and puts the tabs back when the timer stops. This uses AppleScript, so macOS asks once
+whether Tick may control the browser.
 
-## デザインと動作
+## Notes
 
-- ストップウォッチは透明背景に経過時間だけ（0.1秒単位）。
-- タイマーは円形の残り時間ゲージと時間だけ。円は減っていきます。
-- ウィンドウはドラッグで動かせ、ほかのウィンドウの手前に表示されます。
-- メニューバーには現在のモードの時間を表示。Dock アイコンは表示しません。
-- タイマー終了で音と macOS 通知（OS の通知許可が必要）。
-- `S` / `T` 切り替え時は現在の計測を一時停止して保持します。
-- タイマーは指定時間を秒単位で管理し、ほかの作業中も進みます。
+- Pausing a timer lifts the block until you start again.
+- The blocker never touches Claude or OpenAI domains, so coding assistants keep working.
+- The timer fires up to 50 ms early; display is rounded to whole seconds.
 
-## 注意点
+## Layout
 
-- macOS のアクセシビリティ設定、ほかの常駐アプリ、キーボードユーティリティによっては Option 2連打の検知が競合する場合があります。
-- キー入力はタイマーウィンドウがフォーカスされているときだけ有効です。
-- アプリを完全終了するとグローバル呼び出しはできません。メニューバーに常駐させてください。
-- 1回目の実行時にはアプリの起動経路が変わるとアクセシビリティの許可を再度求められる場合があります。
+- `CircleTimer/`: the app (SwiftUI + AppKit). `AppDelegate.swift` holds the window, keys and site blocker,
+  `TimerModel.swift` the timer state, `TimerFaceView.swift` the ring.
+- `scripts/`: `install.sh`, `setup-blocker.sh`, `tick-hosts`.
+- `Tick-icon.svg`: the icon source.
