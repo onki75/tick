@@ -91,6 +91,19 @@ struct PresetSettingsView: View {
             .frame(height: 74)
             Divider()
             HStack {
+                Text("キー操作")
+                    .font(.title3.weight(.semibold))
+                Spacer()
+                Button("キー設定ファイルを開く") {
+                    KeyBindings.createFileIfNeeded()
+                    NSWorkspace.shared.open(KeyBindings.url)
+                }
+            }
+            Text("操作ごとにキーを書き換えられます。保存すると、すぐ反映されます。")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Divider()
+            HStack {
                 Text("1〜5999分で指定")
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -108,7 +121,7 @@ struct PresetSettingsView: View {
             }
         }
         .padding(24)
-        .frame(width: 370, height: 500, alignment: .top)
+        .frame(width: 370, height: 580, alignment: .top)
         .onAppear {
             values = model.presetMinutes.map(String.init)
             sites = Blocklist.load()

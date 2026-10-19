@@ -12,6 +12,7 @@
 		A1B2C3D40000000000000104 /* TimerFaceView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000204 /* TimerFaceView.swift */; };
 		A1B2C3D40000000000000105 /* PresetSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000205 /* PresetSettingsView.swift */; };
 		A1B2C3D40000000000000106 /* OptionDoubleTapMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D40000000000000206 /* OptionDoubleTapMonitor.swift */; };
+		A1B2C3D400000000000001A1 /* KeyBindings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D400000000000002A1 /* KeyBindings.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -21,6 +22,7 @@
 		A1B2C3D40000000000000204 /* TimerFaceView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimerFaceView.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000205 /* PresetSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetSettingsView.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000206 /* OptionDoubleTapMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionDoubleTapMonitor.swift; sourceTree = "<group>"; };
+		A1B2C3D400000000000002A1 /* KeyBindings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KeyBindings.swift; sourceTree = "<group>"; };
 		A1B2C3D40000000000000207 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A1B2C3D40000000000000208 /* CircleTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = CircleTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -44,6 +46,7 @@
 				A1B2C3D40000000000000204 /* TimerFaceView.swift */,
 				A1B2C3D40000000000000205 /* PresetSettingsView.swift */,
 				A1B2C3D40000000000000206 /* OptionDoubleTapMonitor.swift */,
+				A1B2C3D400000000000002A1 /* KeyBindings.swift */,
 				A1B2C3D40000000000000207 /* Info.plist */
 			);
 			path = CircleTimer;
@@ -102,7 +105,8 @@
 				A1B2C3D40000000000000103 /* TimerModel.swift in Sources */,
 				A1B2C3D40000000000000104 /* TimerFaceView.swift in Sources */,
 				A1B2C3D40000000000000105 /* PresetSettingsView.swift in Sources */,
-				A1B2C3D40000000000000106 /* OptionDoubleTapMonitor.swift in Sources */
+				A1B2C3D40000000000000106 /* OptionDoubleTapMonitor.swift in Sources */,
+				A1B2C3D400000000000001A1 /* KeyBindings.swift in Sources */
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

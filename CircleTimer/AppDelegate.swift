@@ -335,6 +335,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var focusPoll: Timer?
     private var focusProbeInFlight = false
     private var homeOrigin: NSPoint?
+    private let keyBindings = KeyBindings()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -351,6 +352,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             self?.optionDoubleTapped()
         }
         trackPreviousApp()
+        // Option x2 is global and needs Accessibility; ask for it right away instead of failing silently.
+        if !AXIsProcessTrusted() { openAccessibilityPermission() }
         // Move the timer as soon as the tabs were swapped, and whenever another app comes to the front.
         NotificationCenter.default.addObserver(forName: .tickTabsReplaced, object: nil, queue: .main) { [weak self] _ in
             MainActor.assumeIsolated { if self?.focusPoll != nil { self?.moveTimerToCenter() } }
@@ -471,16 +474,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             guard let app = note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication,
                   app.bundleIdentifier != ownID else { return }
             MainActor.assumeIsolated { self?.previousApp = app }
-        }
-    }
-
-    private func arrowDirection(for keyCode: UInt16) -> (dx: CGFloat, dy: CGFloat)? {
-        switch keyCode {
-        case 123: return (-1, 0) // left
-        case 124: return (1, 0)  // right
-        case 125: return (0, -1) // down
-        case 126: return (0, 1)  // up
-        default: return nil
         }
     }
 
@@ -639,42 +632,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
-        if event.characters == "?" { model.showHelp.toggle(); return true } // ? toggles key hints
-        if event.keyCode == 49 { // Space: start or pause; after starting, hand focus back
+        guard let action = keyBindings.action(for: event) else { return false }
+        let toEdge = event.modifierFlags.contains(.shift) // Shift + move key snaps to the screen edge
+        switch action {
+        case .help: model.showHelp.toggle()
+        case .startStop: // start or pause; after starting, hand focus back
             model.toggleRunning()
             if model.isRunning { returnFocusToPreviousApp() }
-            return true
+        case .hide: hidePanel()
+        case .enterTime: model.beginEditing()
+        case .switchMode: model.selectMode(model.mode == .timer ? .stopwatch : .timer)
+        case .reset: model.reset()
+        case .cooler: model.adjustWarmth(by: -0.1) // towards white
+        case .warmer: model.adjustWarmth(by: 0.1)
+        case .moveLeft: movePanel((-1, 0), toEdge: toEdge)
+        case .moveRight: movePanel((1, 0), toEdge: toEdge)
+        case .moveDown: movePanel((0, -1), toEdge: toEdge)
+        case .moveUp: movePanel((0, 1), toEdge: toEdge)
+        case .preset1, .preset2, .preset3:
+            // Presets only apply to a stopped timer; otherwise the key is left for other apps.
+            guard model.mode == .timer, !model.isRunning else { return false }
+            model.choosePreset(action == .preset1 ? 0 : action == .preset2 ? 1 : 2)
         }
-        if event.keyCode == 53 { hidePanel(); return true } // Escape
-        if event.keyCode == 48 { model.beginEditing(); return true } // Tab
-        if let direction = arrowDirection(for: event.keyCode) { // Arrow keys move the window
-            movePanel(direction, toEdge: event.modifierFlags.contains(.shift))
-            return true
-        }
-        if event.keyCode == 36 || event.keyCode == 76 { // Return / keypad Enter: switch timer <-> stopwatch
-            model.selectMode(model.mode == .timer ? .stopwatch : .timer)
-            return true
-        }
-
-        guard let key = event.charactersIgnoringModifiers?.lowercased() else { return false }
-        switch key {
-        case "r": model.reset(); return true
-        case ",": model.adjustWarmth(by: -0.1); return true // "<": cooler (towards white)
-        case ".": model.adjustWarmth(by: 0.1); return true  // ">": warmer
-        case "h", "j", "k", "l": // vim-style window movement (Shift = snap to edge)
-            let vim: [String: (dx: CGFloat, dy: CGFloat)] = ["h": (-1, 0), "j": (0, -1), "k": (0, 1), "l": (1, 0)]
-            if let direction = vim[key] {
-                movePanel(direction, toEdge: event.modifierFlags.contains(.shift))
-                return true
-            }
-        case "1", "2", "3":
-            if model.mode == .timer, !model.isRunning {
-                model.choosePreset((Int(key) ?? 1) - 1)
-                return true
-            }
-        default: break
-        }
-        return false
+        return true
     }
 
     @objc private func openPresetSettings() {
@@ -684,7 +664,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 370, height: 500),
+            contentRect: NSRect(x: 0, y: 0, width: 370, height: 580),
             styleMask: [.titled, .closable],
             backing: .buffered, defer: false
         )

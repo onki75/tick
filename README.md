@@ -22,7 +22,7 @@ cd tick
 Pressing **Option twice** works from any app, which needs macOS **System Settings → Privacy & Security →
 Accessibility** to allow Tick. Because the app is signed ad hoc, macOS treats every reinstall as a new app and
 drops the permission: switch Tick off and on again (or remove and re-add it) in that list, then relaunch Tick.
-Until then you can bring the timer forward by opening Tick from Spotlight or Raycast.
+Tick asks for it on launch while it is missing. Until then you can bring the timer forward by opening Tick from Spotlight or Raycast.
 
 ## Using it
 
@@ -44,6 +44,25 @@ give focus back to the previous app.
 | `Esc`, `⌘W` | Hide the timer (a running timer keeps running; Option ×2 brings it back) |
 | `⌘,` | Settings: presets and blocked sites |
 | `⌘Q` | Quit |
+
+### Changing the keys
+
+Open **Settings** (`⌘,`) and press **キー設定ファイルを開く**, or edit
+`~/Library/Application Support/Tick/keybindings.json` yourself. Every action can take one key or a list of keys,
+and only the actions you list are changed. Saved changes apply immediately.
+
+```json
+{
+  "startStop": ["space", "p"],
+  "reset": "x",
+  "moveLeft": ["left", "a"]
+}
+```
+
+Actions: `startStop`, `switchMode`, `enterTime`, `reset`, `hide`, `help`, `preset1`, `preset2`, `preset3`,
+`moveLeft`, `moveRight`, `moveUp`, `moveDown`, `cooler`, `warmer`. Keys are single characters or one of `space`,
+`return`, `tab`, `escape`, `delete`, `left`, `right`, `up`, `down`. The `⌘` shortcuts, the digit keys while typing
+a time, and the Option ×2 gesture are fixed.
 
 When the timer ends it plays a sound. Focusing the timer or clicking it silences the alarm and resets it.
 
