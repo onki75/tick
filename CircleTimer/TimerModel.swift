@@ -98,6 +98,14 @@ final class TimerModel: ObservableObject {
         return max(0, min(1, timerRemaining / timerDuration))
     }
 
+    /// A timer that was started and stopped part-way: it still has time left, but less than the full duration.
+    var isPaused: Bool {
+        mode == .timer && !isRunning && !isAlarming && !isEditing && timerRemaining > 0 && timerRemaining < timerDuration
+    }
+
+    /// Sites stay blocked while the timer runs or is paused. Resetting, choosing a new time or typing one lifts it.
+    var blocksSites: Bool { mode == .timer && !isEditing && (isRunning || isPaused) }
+
     func selectMode(_ newMode: Mode) {
         guard mode != newMode else { return }
         pause()

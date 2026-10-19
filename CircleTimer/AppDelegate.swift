@@ -335,7 +335,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var focusPoll: Timer?
     private var focusProbeInFlight = false
     private var homeOrigin: NSPoint?
-    private let keyBindings = KeyBindings()
+    private let keyBindings = KeyBindings.shared
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         NSApp.setActivationPolicy(.accessory)
@@ -364,9 +364,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated { self?.updateTimerPlace() }
         }
         focusServer.start()
-        // Block distracting sites only while the timer is running (also clears a stale block at launch).
-        model.$isRunning.combineLatest(model.$mode)
-            .map { $0 && $1 == .timer }
+        // Block distracting sites while the timer is running or paused (also clears a stale block at launch).
+        // objectWillChange fires before the change lands, so look at the model once the change is complete.
+        model.objectWillChange
+            .receive(on: DispatchQueue.main)
+            .map { [weak self] in self?.model.blocksSites ?? false }
+            .prepend(false)
             .removeDuplicates()
             .sink { [weak self] active in
                 SiteBlocker.set(active)
@@ -664,7 +667,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
         let window = NSWindow(
-            contentRect: NSRect(x: 0, y: 0, width: 370, height: 580),
+            contentRect: NSRect(x: 0, y: 0, width: 420, height: 680),
             styleMask: [.titled, .closable],
             backing: .buffered, defer: false
         )

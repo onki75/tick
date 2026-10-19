@@ -47,9 +47,11 @@ give focus back to the previous app.
 
 ### Changing the keys
 
-Open **Settings** (`⌘,`) and press **キー設定ファイルを開く**, or edit
-`~/Library/Application Support/Tick/keybindings.json` yourself. Every action can take one key or a list of keys,
-and only the actions you list are changed. Saved changes apply immediately.
+Open **Settings** (`⌘,`), go to the **キー操作** tab, press **変更** next to an action, then press the new key.
+Changes apply immediately. A key already used by another action is refused.
+
+The choices are saved to `~/Library/Application Support/Tick/keybindings.json`, which you can also edit by hand.
+Every action can take one key or a list of keys, and only the actions you list are changed.
 
 ```json
 {
@@ -68,7 +70,7 @@ When the timer ends it plays a sound. Focusing the timer or clicking it silences
 
 ## Site blocking
 
-While a timer or stopwatch is running, Tick blocks the sites in its list: YouTube, Instagram, TikTok and X by
+While a timer is running or paused, Tick blocks the sites in its list: YouTube, Instagram, TikTok and X by
 default. Add more in **Settings** (`⌘,`); added sites apply from the next start. To remove one, edit
 `~/Library/Application Support/Tick/blocklist.txt` (one host name per line).
 
@@ -90,7 +92,7 @@ whether Tick may control the browser.
 
 ## Notes
 
-- Pausing a timer lifts the block until you start again.
+- Pausing keeps the block. Resetting, choosing a preset, or typing a new time lifts it.
 - The blocker never touches Claude or OpenAI domains, so coding assistants keep working.
 - The timer fires up to 50 ms early; display is rounded to whole seconds.
 
