@@ -117,7 +117,7 @@ final class TimerModel: ObservableObject {
     }
 
     func toggleRunning() {
-        guard !isEditing else { return }
+        guard !isEditing, !isAlarming else { return }
         if isRunning {
             pause()
         } else {
@@ -164,7 +164,7 @@ final class TimerModel: ObservableObject {
     }
 
     func choosePreset(_ index: Int) {
-        guard mode == .timer, !isRunning, !isEditing,
+        guard mode == .timer, !isRunning, !isEditing, !isAlarming,
               presetMinutes.indices.contains(index) else { return }
         timerDuration = TimeInterval(presetMinutes[index] * 60)
         timerRemaining = timerDuration

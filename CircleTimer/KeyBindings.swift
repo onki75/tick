@@ -35,6 +35,9 @@ final class KeyBindings: ObservableObject {
 
     func keys(for action: TimerAction) -> [String] { bindings[action] ?? [] }
 
+    /// Picks up edits made to the file by hand (Settings calls this when it opens).
+    func refresh() { reloadIfChanged() }
+
     func isDefault(_ action: TimerAction) -> Bool { keys(for: action) == Self.defaults[action] }
 
     func action(for event: NSEvent) -> TimerAction? {
@@ -95,17 +98,22 @@ final class KeyBindings: ObservableObject {
 
     /// Makes `key` the only key of `action`. Returns the other action that already uses it, in which case nothing changes.
     func assign(_ key: String, to action: TimerAction) -> TimerAction? {
+        reloadIfChanged()
         if let owner = actionForKey[key], owner != action { return owner }
         bindings[action] = [key]
         rebuildAndSave()
         return nil
     }
 
-    func reset(_ action: TimerAction) {
-        // Keys that another action has taken in the meantime stay with that action.
-        let free = (Self.defaults[action] ?? []).filter { actionForKey[$0] == nil || actionForKey[$0] == action }
-        bindings[action] = free
+    /// Restores the default keys of `action`. Returns the other action that currently uses one of them,
+    /// in which case nothing changes (the user frees that key first).
+    func reset(_ action: TimerAction) -> TimerAction? {
+        reloadIfChanged()
+        let wanted = Self.defaults[action] ?? []
+        if let owner = wanted.lazy.compactMap({ self.actionForKey[$0] }).first(where: { $0 != action }) { return owner }
+        bindings[action] = wanted
         rebuildAndSave()
+        return nil
     }
 
     func resetAll() {
@@ -120,7 +128,7 @@ final class KeyBindings: ObservableObject {
             .map { ($0.key.rawValue, $0.value) })
         try? FileManager.default.createDirectory(at: Self.url.deletingLastPathComponent(), withIntermediateDirectories: true)
         if let data = try? JSONSerialization.data(withJSONObject: overrides, options: [.prettyPrinted, .sortedKeys]) {
-            try? data.write(to: Self.url)
+            try? data.write(to: Self.url, options: .atomic)
         }
         loadedStamp = (try? FileManager.default.attributesOfItem(atPath: Self.url.path)[.modificationDate]) as? Date
     }

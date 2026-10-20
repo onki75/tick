@@ -7,10 +7,13 @@ enum Blocklist {
 
     static func load() -> [String] {
         guard let text = try? String(contentsOf: url, encoding: .utf8) else { return [] }
+        var seen = Set<String>()
         return text.split(separator: "\n").compactMap { raw in
             let line = raw.split(separator: "#", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
             let name = line.trimmingCharacters(in: .whitespaces).lowercased()
-            return name.range(of: "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$", options: .regularExpression) == nil ? nil : name
+            guard name.range(of: "^[a-z0-9]([a-z0-9.-]*[a-z0-9])?$", options: .regularExpression) != nil,
+                  seen.insert(name).inserted else { return nil }
+            return name
         }
     }
 
@@ -200,6 +203,7 @@ private struct KeyBindingsTab: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .onAppear { keys.refresh() }
         .onDisappear(perform: stopRecording)
     }
 
@@ -213,8 +217,17 @@ private struct KeyBindingsTab: View {
             Button(recording == action ? "やめる" : "変更") {
                 recording == action ? stopRecording() : startRecording(action)
             }
-            Button("戻す") { stopRecording(); keys.reset(action); message = nil }
+            Button("戻す") { stopRecording(); resetKeys(of: action) }
                 .disabled(keys.isDefault(action))
+        }
+    }
+
+    private func resetKeys(of action: TimerAction) {
+        if let owner = keys.reset(action) {
+            let ownerLabel = Self.labels.first { $0.0 == owner }?.1 ?? ""
+            message = "初期のキーが「\(ownerLabel)」で使われています。先にそちらを変えてください"
+        } else {
+            message = nil
         }
     }
 

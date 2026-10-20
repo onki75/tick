@@ -302,8 +302,10 @@ enum SiteBlocker {
     private static let helper = "/usr/local/libexec/tick-hosts"
     private static let queue = DispatchQueue(label: "tick.siteblocker")
 
+    static var isInstalled: Bool { FileManager.default.isExecutableFile(atPath: helper) }
+
     static func set(_ on: Bool, wait: Bool = false) {
-        guard FileManager.default.isExecutableFile(atPath: helper) else { return }
+        guard isInstalled else { return }
         let work = {
             let process = Process()
             process.executableURL = URL(fileURLWithPath: "/usr/bin/sudo")
@@ -373,7 +375,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             .removeDuplicates()
             .sink { [weak self] active in
                 SiteBlocker.set(active)
-                DispatchQueue.main.async { MainActor.assumeIsolated { self?.setFocusPolling(active) } }
+                // Without the helper nothing is blocked, so there is nothing to watch for in the browser either.
+                DispatchQueue.main.async { MainActor.assumeIsolated { self?.setFocusPolling(active && SiteBlocker.isInstalled) } }
             }
             .store(in: &cancellables)
         // No menu bar item: Option x2 shows the timer, Cmd+Q quits, Cmd+, opens the preset settings.
@@ -436,6 +439,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             MainActor.assumeIsolated {
                 self?.model.isFocused = false
                 self?.model.showHelp = false
+                self?.model.cancelEditing() // an unfinished time entry must not linger (it also lifts the block)
             }
         }
         // The app becoming active/inactive also decides whether the panel counts as focused.
@@ -595,9 +599,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard panel.isVisible, panel.isKeyWindow, !event.isARepeat else { return false }
 
         // While the alarm rings, Space / Return / Esc stop it and reset the timer.
-        if model.isAlarming, [49, 36, 76, 53].contains(event.keyCode) {
-            model.stopAlarm()
-            return true
+        if model.isAlarming {
+            let bound = keyBindings.action(for: event)
+            if [49, 36, 76, 53].contains(event.keyCode) || bound == .startStop || bound == .reset || bound == .hide {
+                model.stopAlarm()
+                return true
+            }
         }
 
         // Command shortcuts: close the window (timers keep running) or quit the app.
@@ -679,6 +686,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         })
         hosting.sizingOptions = [] // the window has a fixed size; auto-sizing made AppKit loop on constraints and crash
         window.contentView = hosting
+        // Closing discards the window, so the next visit starts from the saved state and nothing
+        // (such as a key being recorded) survives.
+        NotificationCenter.default.addObserver(forName: NSWindow.willCloseNotification, object: window, queue: .main) { [weak self, weak window] _ in
+            MainActor.assumeIsolated {
+                window?.contentView = nil
+                self?.presetsWindow = nil
+            }
+        }
         presetsWindow = window
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

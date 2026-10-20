@@ -121,15 +121,21 @@ struct TimerFaceView: View {
     private var hints: some View {
         VStack(spacing: 3) {
             if model.mode == .timer {
-                hintRow([("Space", "開始/停止"), ("R", "リセット")])
-                hintRow(model.presetMinutes.enumerated().map { ("\($0.offset + 1)", "\($0.element)分") })
-                hintRow([("Tab", "入力"), ("⏎", "切替")])
+                hintRow([(key(.startStop), "開始/停止"), (key(.reset), "リセット")])
+                let presets: [TimerAction] = [.preset1, .preset2, .preset3]
+                hintRow(model.presetMinutes.enumerated().map { (key(presets[$0.offset]), "\($0.element)分") })
+                hintRow([(key(.enterTime), "入力"), (key(.switchMode), "切替")])
             } else {
-                hintRow([("Space", "開始/停止"), ("R", "リセット"), ("⏎", "切替")])
+                hintRow([(key(.startStop), "開始/停止"), (key(.reset), "リセット"), (key(.switchMode), "切替")])
             }
         }
         .font(.system(size: 9, design: .rounded))
         .foregroundStyle(.secondary)
+    }
+
+    /// The first key bound to the action, as shown on the face.
+    private func key(_ action: TimerAction) -> String {
+        KeyBindings.shared.keys(for: action).first.map(KeyBindings.display) ?? "–"
     }
 
     private func hintRow(_ items: [(String, String)]) -> some View {
